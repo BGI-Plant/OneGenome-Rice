@@ -5,9 +5,12 @@ NOTE (Preparation Phase – to be removed before public release):
 - The research team is responsible for preparing all technical materials in the repository. The OSPO (Open Source Program Office) is responsible for conducting a compliance review and supplementing the repository with required governance documents, including CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE.md, and SECURITY.md.
 - The README is recommended to follow the structure below. This serves as a guideline rather than a strict requirement, and may be adapted based on project-specific needs.
 
+<img width="273" height="318" alt="image" src="https://github.com/user-attachments/assets/f5c70f09-c57e-4e2d-bf40-23db1da025eb" />
 
-# Title
+# OneGenome-Rice (OGR): A Genomic Foundation Model for Rice
 ## 1. Introduction
+OGR is a foundational AI infrastructure for the next generation of AI-driven precision breeding and functional genomics in rice.
+OGR is a generative genomic foundation model designed to process DNA sequences up to 1 million base pairs in length. The model features 1.25 billion total parameters, utilizing a Mixture of Experts (MoE) architecture that allows for high representational capacity while maintaining computational efficiency during inference. OGR was pre-trained on a curated corpus of 422 rice genomes, representing a diverse array of genotypes from the rice genome group, which includes both modern high-yielding varieties and wild ancestral populations.We detail the architectural innovations, dataset composition, and application-specific findings that define OGR.
 ## 2. Model Information
 ### Model Architecture
 ### Training Data
