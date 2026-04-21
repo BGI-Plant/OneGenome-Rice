@@ -10,7 +10,7 @@ OGR is a generative genomic foundation model designed to process DNA sequences u
 OGR is a decoder-only MoE Transformer for long genomic context. The subsections below summarize **training data**, **model architecture**, and **training process** (full detail in the **Technical Report**, URL to be added).
 
 ### Training Data
-The training corpus is a **QC-filtered pangenome of 422 rice genomes** spanning cultivated and wild *Oryza* diversity. For preprocessing and sampling details, see the **Technical Report**.
+The training corpus is a **QC-filtered pangenome of 422 rice genomes** spanning cultivated and wild *Oryza* diversity. For preprocessing and sampling details, see the **Technical Report**(**文章URL**).
 
 - **Provenance:** assemblies come from **open datasets** published in the literature (public archives and associated papers).
 - **Encoding:** raw DNA with a nucleotide-level tokenizer (A/T/C/G/N and special tokens).
@@ -93,13 +93,13 @@ docker run -it --gpus all --shm-size 32g zjlabgenos/mega:v1 /bin/bash
 ```
 
 ### Model Download
-Genos models are available for download from [Hugging Face](https://huggingface.co/collections/ZhejiangLab/genos) and [ModelScope](https://modelscope.cn/collections/zhejianglab/Genos). Each model employs a hybrid Mixture-of-Experts (MoE) architecture and supports analysis at single-nucleotide resolution.
+Genos models are available for download from [Hugging Face](https://huggingface.co/ZhejiangLab/AgriGenome) and [ModelScope](https://modelscope.cn/models/zhejianglab/AgriGenome). Each model employs a hybrid Mixture-of-Experts (MoE) architecture and supports analysis at single-nucleotide resolution.
 
 <div align="center">
 
-| **Model** | **Total Params** | **Hugging Face** | **ModelScope** | **Megatron ckpt** |
-|:---------:|:----------------:|:----------------:|:--------------:|:--------------:|
-| OGR-1.25B | 1.25B | [🤗 Hugging Face](https://huggingface.co/ZhejiangLab/Genos-1.2B) |[🤖 ModelScope](https://modelscope.cn/models/zhejianglab/Genos-1.2B) | [Genos-1.2B](https://huggingface.co/ZhejiangLab/Genos-Megatron-1.2B) | 
+| **Model** | **Total Params** | **Hugging Face** | **ModelScope** |
+|:---------:|:----------------:|:----------------:|:--------------:|
+| OGR-1.25B | 1.25B | [🤗 Hugging Face](https://huggingface.co/ZhejiangLab/AgriGenome) |[🤖 ModelScope](https://modelscope.cn/models/zhejianglab/AgriGenome) |
 
 </div>
 
@@ -113,7 +113,7 @@ TODO
 ## 5. Application Scenarios(TODO!)
 To further illustrate the practical value, extensibility, and potential of Genos, we present two representative application cases.
 
-- **Case 1: [RNA-Seq Data Generation](RNA-seq_data_generation/Case_1_RNA-Seq_Data_Generation.md)**  
+- **Case 1: [*Indica*-*Japonica* Introgression Identification](RNA-seq_data_generation/Case_1_RNA-Seq_Data_Generation.md)**  
   This case illustrates how Genos can be fine-tuned to generate transcriptomic profiles at single-nucleotide resolution directly from genomic sequences. This approach enables computational reconstruction of expression landscapes, reduces experimental costs, and provides a robust foundation for downstream functional genomics analyses.
 
 - **Case 2: [Text-Genome Model Fusion](Text-genome_model_fusion/Case_2_Text_Genome_Model_Fusion.md)**  
@@ -143,13 +143,13 @@ We also conduct compatibility tests on the following hardware accelerators. For 
 - MUXI GPU
 
 ## 7. License and Uses
-**License**：The Genos collection of models are licensed under the  [Apache License 2.0](LICENSE).
+**License**：The OGR collection of models are licensed under the  [Apache License 2.0](LICENSE).
 
-**Primary intended use**：The primary use of Genos models is to support genomics research, providing researchers with advanced analytical capabilities and long-context modeling tools powered by large-scale foundation models for the human genome.
+**Primary intended use**：The primary use of OGR models is to support rice genomics research, providing researchers with advanced analytical capabilities and long-context modeling tools powered by large-scale foundation models trained on rice genomes.
 
-**Out-of-scope use**：Genos models are not intended for use in any manner that violates applicable laws or regulations, nor for any activities prohibited by the license agreement. 
+**Out-of-scope use**：OGR models are not intended for use in any manner that violates applicable laws or regulations, nor for any activities prohibited by the license agreement.
 
-**Ethical Considerations and Limitations**: Like other foundation models, Genos models may exhibit behaviors that carry potential risks. They may generate inaccurate outputs when interpreting genomic sequences or making inferences. Therefore, users should conduct rigorous validation and apply appropriate safeguards before using Genos in downstream research. Developers deploying applications based on Genos must carefully assess risks specific to their use cases, especially in contexts such as pharmaceutical development, clinical diagnosis, medical treatment, or any activities directly impacting human health.
+**Ethical Considerations and Limitations**: Like other foundation models, OGR models may exhibit behaviors that carry potential risks. They may generate inaccurate outputs when interpreting rice genomic sequences or making inferences. Therefore, users should conduct rigorous validation and apply appropriate safeguards before using OGR in downstream research. Developers deploying applications based on OGR must carefully assess risks specific to their use cases.
 
 ## 8. Citation and Acknowledgements(TODO!)
 We acknowledge the Human Pangenome Reference Consortium (HRPC; BioProject ID: PRJNA730823) and its funding agency, the National Human Genome Research Institute (NHGRI), for providing publicly available data. We also thank the BGI AI team for technical assistance.
