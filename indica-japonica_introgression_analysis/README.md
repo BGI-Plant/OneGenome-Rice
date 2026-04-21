@@ -55,7 +55,7 @@ This strategy enables effective identification of: 1) regions with pure origin; 
 
 We tried to apply this framework to investigate *indica* introgression in the *japonica* cultivar Yanfeng 47 (YF47), a representative breeding line derived from historical inter-subspecific breeding behavior. These regions were consistently organized in extended blocks rather than isolated loci, indicating that introgression is captured at the segment level, reflecting the introgression of adjacent genomic fragments during breeding.
 
-![Case study illustration (e.g. YF47)](images/Introgression_Analysis-b.png)
+![Case study illustration (e.g. YF47)](images/Elite_Japonica_Cultivar_YF47_Introgression.png)
 
 ## **4. Project structure**
 
