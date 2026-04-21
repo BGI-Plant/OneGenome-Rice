@@ -139,7 +139,7 @@ Genos pre-training is built on **[Megatron-LM](https://github.com/NVIDIA/Megatro
 - **AgroNT benchmark tasks:** The model achieves strong performance in chromatin accessibility prediction but shows limitations in poly(A) site and gene expression prediction, reflecting weaknesses in fine-grained regulatory modeling.
 
 <div align="center">
-    <img src="figure/Performance Evaluation.png" width="60%" alt="Performance Evaluation" />
+    <img src="figure/Performance_Evaluation.png" width="60%" alt="Performance Evaluation" />
 </div>
 
 ## 4. Quickstart
@@ -176,13 +176,17 @@ OGR models are available for download from [Hugging Face](https://huggingface.co
 
 To further illustrate the practical value, extensibility, and potential of Genos, we present two representative application cases.
 
-- **Case 1: <a href="applications/1.indica-japonica_introgression_analysis/README.md">Identification of <em>indica-japonica</em> Introgression</a>**
+- **Case 1: [Identification of *indica-japonica* Introgression](applications/1.identification_of_indica-japonica_introgression/README.md)**
+
   This case aims to exploit the capacity of the OGR foundation model for fine-scale inference of subspecies origin across the rice genome, enabling the identification of introgression between indica (Oryza sativa subsp. indica) and japonica (Oryza sativa subsp. japonica). Unlike traditional approaches that rely on SNP-based statistics or local sequence alignment, this study starts directly from raw genomic sequences. High-dimensional embeddings are extracted using the OGR model, upon which downstream predictive models are built. This approach enables the capture of deep genetic structural differences at the sequence level, facilitating the identification of potential introgressed regions between subspecies.
-- **Case 2: [Trait-Associated Loci Finding](applications/2.Identification_of_Trait-Associated_Loci/Readme.md)**
+- **Case 2: [Trait-Associated Loci Finding](applications/2.identification_of_trait-associated_loci/Readme.md)**
+
   This repository demonstrates a reproducible workflow for identifying rice candidate loci from bidirectional attention signals produced by OneGenomeRice. The workflow reconstructs sample-specific sequences from variants, extracts forward and reverse-complement attention, performs position-level group comparisons, and summarizes gene-level differential signals in selected candidate regions.
-- **Case 3: [Gene Expression Prediction of DNA Sequence](applications/3.gene_expression_modeling_on_DNA/README.md)**
-  This repository trains and runs models that predict nucleotide-resolution multi-modal data for DNA sequences up to 32 kb in length.
-- **Case 4: [Gene Expression Prediction Based on Multi-modal Data](applications/4.gene_expression_modeling_on_DNA_and_ATAC/senario.md)**
+- **Case 3: [Gene Expression Prediction of DNA Sequence](applications/3.gene_expression_prediction_of_DNA_sequence/README.md)**
+
+  The architecture leverages a pre-trained DNA foundation model as a sequence encoder, paired with a U-Net-style regression head designed for multi-track genomic signal prediction. The framework supports full-parameter fine-tuning, distributed data-parallel training, and efficient inference, enabling downstream applications such as cis-regulatory variant effect prediction, allele-specific expression modeling, and transcriptome-informed breeding design.
+- **Case 4: [Gene Expression Prediction Based on Multi-modal Data](applications/4.gene_expression_prediction_based_on_multi_modal_data/senario.md)**
+
   This repository trains and runs models that predict strand-specific RNA-seq coverage from a DNA sequence window and matching ATAC-seq (chromatin accessibility) in the same window. It targets plant and other genomics setups where BigWig tracks and a reference FASTA are available.
 
 
