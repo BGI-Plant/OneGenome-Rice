@@ -222,8 +222,7 @@ If you use this work in your research, please cite the following paper:
 
 ## 8. Contact(TODO!)
 
-If you have any questions, please raise an issue or contact us at [OneGenomeRice@zhejianglab.org](mailto:OneGenomeRice@zhejianglab.org), [bgi-plant@genomics.cn](mailto:bgi-plant@genomics.cn).
+For project-related questions, please submit an [issue](https://github.com/ZhejiangLab/OneGenomeRice/issues). 
 
-For project-related questions, please submit an [issue](https://github.com/ZhejiangLab/OneGenomeRice/issues). For general inquiries, you can reach us at:
-
+For general inquiries, you can reach us at:
 📧[opensource@zhejianglab.org](mailto:opensource@zhejianglab.org) · 📧[OneGenomeRice@zhejianglab.org](mailto:OneGenomeRice@zhejianglab.org) · 📧[bgi-plant@genomics.cn](mailto:bgi-plant@genomics.cn)
