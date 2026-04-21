@@ -22,7 +22,7 @@ Sample selection: samples overlapping with the 3KRGP (3K rice genome project) we
 
 The model is built upon the OneGenome-Rice foundation model. Unlike conventional fine-tuning approaches, this study does not update the parameters of the foundation model. Instead, it directly extracts embeddings from each 8 kb sequence and builds a lightweight downstream predictive model based on these representations, with the core workflow as follows:
 
-![Overall framework and workflow](images/Introgression_Analysis-a.png)
+![Overall framework and workflow](images/Framework in Indica-Japonica Introgression Analysis.png)
 
 **Data Construction and Partitioning**: Whole-genome sequences from *indica* and *japonica* rice are collected and divided into training and test sets at the individual level (10:1 ratio).
 
