@@ -123,8 +123,8 @@ TODO
 To further illustrate the practical value, extensibility, and potential of Genos, we present two representative application cases.
 
 - **Case 1: [*Indica*-*Japonica* Introgression Identification](indica-japonica_introgression_analysis/README.md)**  
-  This case illustrates how Genos can be fine-tuned to generate transcriptomic profiles at single-nucleotide resolution directly from genomic sequences. This approach enables computational reconstruction of expression landscapes, reduces experimental costs, and provides a robust foundation for downstream functional genomics analyses.
-
+  This case aims to exploit the capacity of the OGR foundation model for fine-scale inference of subspecies origin across the rice genome, enabling the identification of introgression between *indica* (*Oryza sativa* subsp. *indica*) and *japonica* (*Oryza sativa* subsp. *japonica*). Unlike traditional approaches that rely on SNP-based statistics or local sequence alignment, this study starts directly from raw genomic sequences. High-dimensional embeddings are extracted using the OGR model, upon which downstream predictive models are built. This approach enables the capture of deep genetic structural differences at the sequence level, facilitating the identification of potential introgressed regions between subspecies.
+  
 - **Case 2: [Text-Genome Model Fusion](Text-genome_model_fusion/Case_2_Text_Genome_Model_Fusion.md)**  
   This case explores a multimodal framework that integrates genome-scale sequence encoders with large language models. It emphasizes the ability to jointly leverage biological prior knowledge, literature-based reasoning, and sequence-level representations, paving the way for more intelligent, interpretable, and knowledge-grounded bio-AI systems.
 
