@@ -43,17 +43,17 @@ Sample selection: samples overlapping with the 3KRGP (3K rice genome project) we
 
 ### **3.1 Overall Framework**
 
-The model is built upon the OneGenome-Rice foundation model. Unlike conventional fine-tuning approaches, this study does not update the parameters of the foundation model. Instead, it directly extracts embeddings from each 8 kb sequence and builds a lightweight downstream predictive model based on these representations, with the core workflow as follows:
+The model is built upon the OneGenome-Rice foundation model. Unlike conventional fine-tuning approaches, this study does not update the parameters of the foundation model. Instead, it directly extracts embeddings from each 8,000 bp sequence and builds a lightweight downstream predictive model based on these representations, with the core workflow as follows:
 
 ![Overall framework and workflow](images/Introgression_Framework.png)
 
 **Data Construction and Partitioning**: Whole-genome sequences from *indica* and *japonica* rice are collected and divided into training and test sets at the individual level (10:1 ratio).
 
-**Genomic Window Segmentation**: Each genome is partitioned into fixed-length sliding windows (8 kb), generating a set of sequence fragments that cover the entire genome.
+**Genomic Window Segmentation**: Each genome is partitioned into fixed-length sliding windows (8,000 bp), generating a set of sequence fragments that cover the entire genome.
 
-**Sequence Representation Extraction**: Each 8 kb sequence fragment is encoded using the OGR foundation model to obtain high-dimensional embedding representations.
+**Sequence Representation Extraction**: Each 8,000 bp sequence fragment is encoded using the OGR foundation model to obtain high-dimensional embedding representations.
 
-**Downstream Modeling**: A random forest model is trained on these embeddings to learn the mapping from sequence representations to subpopulation assignment probabilities ($P_{\mathrm{indica}}$: probability of belonging to *indica*; $P_{\mathrm{japonica}}$: probability of belonging to *japonica*).
+**Downstream Modeling**: A random forest model is trained on these embeddings to learn the mapping from sequence representations to subpopulation assignment probabilities ($P_{\textit{indica}}$: probability of belonging to *indica*; $P_{\textit{japonica}}$: probability of belonging to *japonica*).
 
 **Introgression Map Construction and Performance Evaluation**: Predictions are generated on the test set, and the resulting probabilities are visualized along genomic coordinates to construct introgression landscapes. At the same time, indicators such as AUC and ACC are used to quantitatively evaluate the model performance.
 
@@ -63,9 +63,9 @@ Model performance is evaluated on the test set using the true subpopulation labe
 
 |           **Test Set**           |       **Classifier**       | **ACC** | **AUC** |
 | :------------------------------------: | :------------------------------: | :-----------: | :-----------: |
-| 1 Temperate*japonica* + 1 *indica* | Random Forest (n_estimators=100) |     0.804     |     0.794     |
+| 1 Temperate *japonica* + 1 *indica* | Random Forest (n_estimators=100) |     0.804     |     0.794     |
 
-Based on the subpopulation probabilities ($P_{\mathrm{*indica*}}$ and $P_{\mathrm{*japonica*}}$), genomic segments are classified as follows:
+Based on the subpopulation probabilities ($P_{\textit{indica}}$ and $P_{\textit{japonica}}$), genomic segments are classified as follows:
 
 - If either probability exceeds 0.8, the segment is assigned to the corresponding subpopulation.
 - If both probabilities are below 0.8, or both exceed 0.8, the segment is classified as a low-differentiation region, indicating weak or ambiguous subpopulation signals.
@@ -290,7 +290,7 @@ See **Section 5** for environment setup instructions. Quick summary:
    python utils/genomic_window_egmentation.py --dataset-name rice_introgression --output-dir data
    ```
 
-   This writes `data/rice_introgression_jap-ind/train.jsonl` and `data/rice_introgression_jap-ind/test.jsonl` (8 kb windows; train step 4 kb, test step 8 kb per script defaults). Paths must match `dataset.data_path` and `dataset.eval_datasets` in `config/train_rf_config.yaml`.
+   This writes `data/rice_introgression_jap-ind/train.jsonl` and `data/rice_introgression_jap-ind/test.jsonl` (8,000 bp windows; train step 4,000 bp, test step 8,000 bp per script defaults). Paths must match `dataset.data_path` and `dataset.eval_datasets` in `config/train_rf_config.yaml`.
 3. **Training JSONL format**Each line must be a JSON object with at least the keys configured in `data/datasets_info.yaml` (`sequence` and `label` for `rice_introgression_jap-ind`). Labels are multilabel vectors used by `RandomForestClassifier` (one RF per output dimension). If you already have compatible JSONL from another pipeline, you may place them under `data/<dataset_name>/` instead of running the window script.
 
    **JSONL Format Specification:**
@@ -311,7 +311,7 @@ See **Section 5** for environment setup instructions. Quick summary:
    | Field        | Type            | Description                                            | Example                                                |
    | ------------ | --------------- | ------------------------------------------------------ | ------------------------------------------------------ |
    | `sequence` | string          | DNA sequence (case-insensitive, A/T/G/C/N only)        | `"ATCGATCG"`                                         |
-   | `label`    | array of 2 ints | Multilabel vector:`[japonica_binary, indica_binary]` | `[1, 0]` (pure japonica) or `[0, 1]` (pure indica) |
+   | `label`    | array of 2 ints | Multilabel vector:`[japonica_binary, indica_binary]` | `[1, 0]` (pure *japonica*) or `[0, 1]` (pure *indica*) |
 
    **Example JSONL file:**
 
@@ -328,8 +328,8 @@ See **Section 5** for environment setup instructions. Quick summary:
 
    - Reads multi-sequence FASTA
    - Trims leading/trailing N bases
-   - Creates fixed-length sliding windows (default: 8 kb for training, same for test)
-   - Assigns labels based on the source file (japonica vs. indica)
+   - Creates fixed-length sliding windows (default: 8,000 bp for training, same for test)
+   - Assigns labels based on the source file (*japonica* vs. *indica*)
    - Outputs JSONL with one JSON object per window
 4. **Edit output paths in YAML**
    In `config/train_rf_config.yaml`, set `embedding.output_dir` and `output.result_dir` (defaults `embedding_path`, `results_path`). The trained RF path used later is under `results_path/<model.name>/last_epoch_model/`.
