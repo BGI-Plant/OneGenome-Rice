@@ -6,7 +6,7 @@
 
 ## 1. Introduction
 
-OGR is a foundational AI infrastructure for the next generation of AI-driven precision breeding and functional genomics in rice.
+**OneGenomeRice(OGR)** is a foundational AI infrastructure for the next generation of AI-driven precision breeding and functional genomics in rice.
 OGR is a generative genomic foundation model designed to process DNA sequences up to 1 million base pairs in length. The model features 1.25 billion total parameters, utilizing a Mixture of Experts (MoE) architecture that allows for high representational capacity while maintaining computational efficiency during inference. OGR was pre-trained on a curated corpus of 422 rice genomes, representing a diverse array of genotypes from the rice genome group, which includes both modern high-yielding varieties and wild ancestral populations. We detail the architectural innovations, dataset composition, and application-specific findings that define OGR.
 
 ## 2. Model Information
@@ -229,4 +229,7 @@ If you use this work in your research, please cite the following paper:
 
 ## 8. Contact(TODO!)
 
-If you have any questions, please raise an issue or contact us at [OneGenomeRice@zhejianglab.org](mailto:OneGenomeRice@zhejianglab.org), [bgi-plant@genomics.cn](mailto:bgi-plant@genomics.cn).
+For project-related questions, please submit an [issue](https://github.com/ZhejiangLab/OneGenomeRice/issues). 
+
+For general inquiries, you can reach us at:
+📧[opensource@zhejianglab.org](mailto:opensource@zhejianglab.org) · 📧[OneGenomeRice@zhejianglab.org](mailto:OneGenomeRice@zhejianglab.org) · 📧[bgi-plant@genomics.cn](mailto:bgi-plant@genomics.cn)
