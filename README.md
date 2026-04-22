@@ -227,9 +227,9 @@ If you use this work in your research, please cite the following paper:
 }
 ```
 
-## 8. Contact
+## 8. Maintenance and Contact
 
-For project-related questions, please submit an [issue](https://github.com/ZhejiangLab/OneGenomeRice/issues). 
+This project is maintained by [Zhejiang Lab](https://en.zhejianglab.com/) in collaboration with [BGI](https://www.bgi.com/global).
 
-For general inquiries, you can reach us at:
+For project-related questions, please submit an [issue](https://github.com/ZhejiangLab/OneGenomeRice/issues). For general inquiries, you can reach us at:
 📧[opensource@zhejianglab.org](mailto:opensource@zhejianglab.org) · 📧[OneGenomeRice@zhejianglab.org](mailto:OneGenomeRice@zhejianglab.org) · 📧[bgi-plant@genomics.cn](mailto:bgi-plant@genomics.cn)
