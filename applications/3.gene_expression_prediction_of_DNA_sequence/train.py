@@ -1,9 +1,9 @@
-# 标准库（内置模块）
+# Standard library
 import os
 import argparse
 import json
 
-# 第三方库（pip 安装的包）
+# Third-party libraries
 import wandb
 import pandas as pd
 import torch
@@ -16,7 +16,7 @@ from transformers import (
     TrainingArguments
 )
 
-# 从自定义仓库中导入模块
+# Local imports
 from src.util import (
     dist_print,
     is_main_process,
@@ -38,106 +38,109 @@ from src.trainer import(
     
 def parse_args():
     """
-    解析命令行参数，返回 args 对象
+    Parse CLI arguments and return an ``args`` object.
     """
     parser = argparse.ArgumentParser(description="Train RNA-seq track predictor with configurable args.")
 
-    # --- 数据路径 ---
+    # --- Data paths ---
     parser.add_argument("--model_path", type=str, required=True,
-                        help="预训练模型路径（HF格式）")
+                        help="Path to the pretrained model (Hugging Face format).")
     parser.add_argument("--tokenizer_dir", type=str, required=True,
-                        help="分词器路径（HF格式）")
+                        help="Path to the tokenizer (Hugging Face format).")
     parser.add_argument("--ckpt_dir", type=str, default=None,
-                        help="用于继续训练")
+                        help="Checkpoint directory to resume training from.")
     parser.add_argument("--use_flash_attn", action='store_true',
-                        help="启用 Flash Attention 加速（默认：禁用）")
+                        help="Enable FlashAttention acceleration (default: disabled).")
     parser.add_argument("--sequence_split_train", type=str, 
-                        help="训练数据索引数据")
+                        help="Training split index file.")
     parser.add_argument("--sequence_split_train_multi", type=str, nargs='+',
-                        help="训练数据索引数据")
+                        help="Training split index files (multiple).")
     parser.add_argument("--sequence_split_val", type=str, required=True, 
-                        help="验证数据索引数据")
+                        help="Validation split index file.")
     parser.add_argument("--index_stat_json", type=str, 
-                        help="训练数据统计信息")
+                        help="Training data statistics JSON (index_stat.json).")
     parser.add_argument("--index_stat_multi_json", type=str, nargs='+',
-                        help="多个训练数据统计信息")
+                        help="Multiple training data statistics JSONs (index_stat.json).")
     parser.add_argument("--nonzero_means",type=float,nargs='+',
-                        help="每个轨道的非零均值")
-    # --- 输出设置 ---
+                        help="Per-track non-zero mean values.")
+    # --- Output settings ---
     parser.add_argument("--output_base_dir", type=str, required=True,
-                        help="输出根目录")
+                        help="Base output directory.")
 
-    # 在 parse_args 函数中修改参数定义：
+    # Debugging / convenience
     parser.add_argument("--max_train_samples", type=int, default=None,
-                        help="调试用：限制训练样本数（None 表示不限制）")
+                        help="Debug: limit number of training samples (None means no limit).")
     parser.add_argument("--max_sequence_length", type=int, default=32768)
 
-    # --- 染色体划分 ---
+    # --- Chromosome splits ---
     parser.add_argument("--train_chromosomes", type=str, nargs='+', default=["chr19"],
-                        help="训练染色体列表")
+                        help="List of chromosomes used for training.")
     parser.add_argument("--val_chromosomes", type=str, nargs='+', default=["Chr12"],
-                        help="验证染色体列表")
+                        help="List of chromosomes used for validation.")
 
-    # --- 训练超参数 ---
+    # --- Training hyperparameters ---
     parser.add_argument("--lr", type=float, default=1e-4,
-                        help="学习率")
+                        help="Learning rate.")
     parser.add_argument("--batch_size_per_device", type=int, default=1,
-                        help="每卡batch size")
+                        help="Per-GPU batch size.")
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1,
-                        help="梯度累积步数")
+                        help="Gradient accumulation steps.")
     parser.add_argument("--num_train_epochs", type=int, default=3,
-                        help="训练轮数")
+                        help="Number of training epochs.")
     parser.add_argument("--dataloader_num_workers", type=int, default=4,
-                        help="数据加载器进程")
+                        help="Number of dataloader workers.")
     parser.add_argument("--gpus_per_node", type=int, default=8,
-                        help="每节点 GPU 数量")
-    # --- 模型设置 ---
+                        help="Number of GPUs per node.")
+    # --- Model settings ---
     parser.add_argument("--loss_func", type=str, default="mse",
                         choices=["mse", "poisson", "tweedie", "poisson-multinomial"], 
-                        help="损失函数类型：mse 或 poisson")
+                        help="Loss function type.")
     parser.add_argument("--proj_dim", type=int, default=1024,
-                        help="U-Net 的输入特征维度")
+                        help="U-Net input feature dimension.")
     parser.add_argument("--num_downsamples", type=int, default=4,
-                        help="U-Net 的下采样次数")
+                        help="Number of downsampling blocks in the U-Net.")
     parser.add_argument("--bottleneck_dim", type=int, default=1536,
-                        help="U-Net 的瓶颈层维度")
+                        help="U-Net bottleneck dimension.")
     
-    # --- 其他 ---
+    # --- Misc ---
     parser.add_argument("--use_wandb", action="store_true",
-                        help="启用 Weights & Biases")
+                        help="Enable Weights & Biases logging.")
     parser.add_argument("--seed", type=int, default=42,
-                    help="随机数种子")
+                    help="Random seed.")
 
     return parser.parse_args()
 
 def main():
     """
-    🧬 主训练流程：基于预训练DNA语言模型 + 多轨道BigWig信号，进行单碱基分辨率预测任务
-    支持分布式训练（DDP），使用 FlashAttention-2 + bf16 加速，W&B 日志记录。
+    Main training entrypoint: fine-tune a pretrained DNA language model with multi-track BigWig
+    signals for single-base-resolution prediction.
+
+    Supports Distributed Data Parallel (DDP), optional FlashAttention-2 + bf16 acceleration,
+    and Weights & Biases logging.
     """
 
-    # 解析参数
+    # Parse arguments
     args  = parse_args()
 
-    # 设置随机数种子
+    # Set random seed
     setup_seed(args.seed)
 
 
-    # 初始化变量，避免 locals() 问题
+    # Initialize variables to avoid locals() issues
     train_dataset = None
     val_dataset = None
     run = None
     
-    # --- 分布式初始化 ---
+    # --- Distributed init ---
     local_rank, world_size, is_distributed = setup_distributed()
     
-    # 日志配置
+    # Logging
     log_filepath = setup_logging(
         output_base_dir=args.output_base_dir,
     )
-    dist_print(f"🌍 分布式初始化完成: local_rank={local_rank}, world_size={world_size}")
+    dist_print(f"[DDP] Distributed initialization complete: local_rank={local_rank}, world_size={world_size}")
 
-    # 打印wanndb信息
+    # Weights & Biases
     if args.use_wandb and is_main_process():
         wandb_config = {
                 "learning_rate": args.lr,
@@ -162,40 +165,40 @@ def main():
                 dir=args.output_base_dir,
                 resume="allow",
                 config=wandb_config)
-        # 定义指标跟踪方式
+        # Define metric summaries
         wandb.define_metric("train/loss", summary="min")
         wandb.define_metric("eval/loss", summary="min")
         wandb.define_metric("epoch")
         wandb.define_metric("global_step")
         
-        dist_print(f"🌐 wandb: Logged in as: {run.entity}")
-        dist_print(f"📊 Project: {run.project} | Run Name: {run.name}")
-        dist_print(f"🚀 Run URL: {run.url}")
-        dist_print(f"💾 Local Dir: {run.dir}")
+        dist_print(f"[wandb] Logged in as: {run.entity}")
+        dist_print(f"[wandb] Project: {run.project} | Run Name: {run.name}")
+        dist_print(f"[wandb] Run URL: {run.url}")
+        dist_print(f"[wandb] Local Dir: {run.dir}")
     
-    # 打印args信息
+    # Print args
     args_dict = vars(args)
-    dist_print("📋 训练参数配置:")
+    dist_print("[config] Training configuration:")
     for key, value in args_dict.items():
         dist_print(f"    {key}: {value}")
 
-    # --- 加载模型与分词器 ---
-    dist_print("🚀 加载预训练模型和分词器...")
+    # --- Load model and tokenizer ---
+    dist_print("[load] Loading pretrained model and tokenizer...")
     if args.use_flash_attn:
-        dist_print("⚡ 使用 Flash Attention")
+        dist_print("[perf] Using FlashAttention")
         base_model = AutoModel.from_pretrained(
             args.model_path,
             trust_remote_code=True,
             revision="main",
             attn_implementation="flash_attention_2",
-            torch_dtype=torch.bfloat16 # 改为 torch_dtype
+            torch_dtype=torch.bfloat16  # Use bf16 weights
         )
     else:
         base_model = AutoModel.from_pretrained(
             args.model_path,
             trust_remote_code=True,
             revision="main",
-            torch_dtype=torch.bfloat16 # 改为 torch_dtype
+            torch_dtype=torch.bfloat16  # Use bf16 weights
         )
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -206,15 +209,15 @@ def main():
     )
 
 
-    # --- 数据划分 ---
-    dist_print(f"🧬 训练染色体: {args.train_chromosomes}")
-    dist_print(f"🧬 验证染色体: {args.val_chromosomes}")
+    # --- Data split ---
+    dist_print(f"[data] Train chromosomes: {args.train_chromosomes}")
+    dist_print(f"[data] Validation chromosomes: {args.val_chromosomes}")
 
-    # --- 获取数据索引 ---
-    dist_print("🏷️ 获取数据索引...")
+    # --- Load split index ---
+    dist_print("[data] Loading split index...")
     if args.sequence_split_train is not None:
             train_index_df = get_index(args.sequence_split_train)
-    # --- 数据索引筛选 ---
+    # --- Filter training index by chromosome ---
             selected_train_index_df = train_index_df[train_index_df["chromosome"].str.extract(r'(Chr\d+)')[0].isin(args.train_chromosomes)].copy()
             if args.max_train_samples is not None:
                 selected_train_index_df = selected_train_index_df.sample(n=args.max_train_samples, random_state=args.seed)
@@ -228,20 +231,20 @@ def main():
                     temp_df = temp_df[:args.max_train_samples]
                 selected_train_index_df.append(temp_df)
     else:
-        raise ValueError("必须提供 sequence_split_train 或 sequence_split_train_multi 参数")
+        raise ValueError("You must provide either --sequence_split_train or --sequence_split_train_multi.")
 
     val_index_df = get_index(args.sequence_split_val)
 
 
-    # --- 数据索引筛选 ---
+    # --- Index filtering ---
     #selected_train_index_df = train_index_df[train_index_df["chromosome"].isin(args.train_chromosomes)].copy()
-    #run_sequence_split_and_meta_extract.py中已经定义好染色体，这里不需要再筛选一次
+    # Chromosomes are already defined in run_sequence_split_and_meta_extract.py, so no need to filter again here.
 
     # selected_val_index_df = val_index_df[val_index_df["chromosome"].isin(args.val_chromosomes)].copy()
     # if args.max_train_samples is not None:
     #     selected_val_index_df = selected_train_index_df
 
-    # --- 读取数据统计信息和标签元信息 ---
+    # --- Load index statistics ---
 
     if args.index_stat_json is not None:
         with open(args.index_stat_json, "r") as f:
@@ -254,19 +257,19 @@ def main():
                 temp_index_stat = json.load(f)
             index_stat.append(temp_index_stat)
     else:
-        raise ValueError("必须提供 index_stat_json 或 index_stat_multi_json 参数")
+        raise ValueError("You must provide either --index_stat_json or --index_stat_multi_json.")
 
     
-    # --- 创建数据集 ---
-    dist_print("🧩 创建训练数据集...")
+    # --- Build datasets ---
+    dist_print("[data] Building training dataset...")
     train_dataset = MultiTrackDataset(selected_train_index_df, index_stat, 
                                       tokenizer, max_length=args.max_sequence_length)
-    dist_print(f"✅ 训练: {len(train_dataset):,} 样本")
-    # dist_print("🧩 创建验证数据集...")
+    dist_print(f"[data] Train: {len(train_dataset):,} samples")
+    # dist_print("[data] Building validation dataset...")
     # val_dataset = MultiTrackDataset(selected_train_index_df, label_meta_df, 
     #                                 index_stat, tokenizer, max_length=args.max_sequence_length)
                                       
-    # dist_print(f"✅ 验证: {len(val_dataset):,} 样本")
+    # dist_print(f"[data] Validation: {len(val_dataset):,} samples")
     
 
     if args.index_stat_multi_json is not None:
@@ -276,8 +279,8 @@ def main():
         for non0_mean in args.nonzero_means:
             index_stat['counts']['nonzero_mean'].append(non0_mean)
 
-    # --- 构建下游预测模型 ---
-    dist_print("🌐 构建下游网络...")
+    # --- Build downstream predictor ---
+    dist_print("[model] Building downstream network...")
     model = GenOmics(
         base_model,
         index_stat=index_stat,
@@ -287,34 +290,38 @@ def main():
         bottleneck_dim=args.bottleneck_dim
     )
     
-    # --- 设置 SyncBatchNorm ---
+    # --- SyncBatchNorm ---
     model = setup_sync_batchnorm(model, is_distributed, args.gpus_per_node)
-    dist_print("✅ SyncBatchNorm 配置完成")
+    dist_print("[ddp] SyncBatchNorm configured")
     
-    # --- 转为 bfloat16 ---
+    # --- Cast to bfloat16 ---
     model = model.to(torch.bfloat16)
-    dist_print("✅ BF16 模式已启用")
+    dist_print("[perf] BF16 enabled")
 
     
-    # # --- 解冻骨架模型并解冻其最后一层 ---
+    # # --- Optionally freeze the backbone and unfreeze only the last layer ---
     # for param in model.base.parameters():
     #     param.requires_grad = False
-    # dist_print("❄ 冻结基模所有参数")
+    # dist_print("[model] Freezing all base model parameters")
     # for param in model.base.layers[-1].parameters():
     #     param.requires_grad = True
-    # dist_print("🔥 解冻最后一层")
+    # dist_print("[model] Unfreezing the last layer")
 
 
-    # --- 打印参数量 ---
+    # --- Parameter counts ---
     trainable_base_params = sum(p.numel() for p in model.base.parameters() if p.requires_grad)
     total_base_params = sum(p.numel() for p in model.base.parameters())
     total_params = sum(p.numel() for p in model.parameters())
     downstread_task_head_params = total_params - total_base_params
     
-    dist_print(f"📊 模型总参数量: {total_params:,} (下游任务头大小：{downstread_task_head_params:,}，基模可训练参数比例: {trainable_base_params/total_base_params*100:.1f}%)")
+    dist_print(
+        f"[model] Total parameters: {total_params:,} "
+        f"(downstream head: {downstread_task_head_params:,}, "
+        f"trainable base ratio: {trainable_base_params/total_base_params*100:.1f}%)"
+    )
 
-    # --- 配置训练参数 ---
-    dist_print("⚙️ 配置训练参数...")
+    # --- Training arguments ---
+    dist_print("[train] Configuring training arguments...")
     training_args = TrainingArguments(
         output_dir=args.output_base_dir,
         logging_dir=os.path.join(args.output_base_dir, "logs"),
@@ -357,7 +364,7 @@ def main():
         resume_from_checkpoint=args.ckpt_dir,
     )
     
-    # --- 创建训练器 ---
+    # --- Trainer ---
     trainer = CustomTrainer(
         model=model,
         args=training_args,
@@ -368,24 +375,24 @@ def main():
         LocalLoggerCallback(log_file_path=log_filepath)]
     )
     try:
-        # --- 开始训练 ---
-        dist_print("🏋️‍♂️ 启动训练...")
+        # --- Train ---
+        dist_print("[train] Starting training...")
         if args.ckpt_dir: 
-            # 恢复训练
+            # Resume training
             trainer.train(resume_from_checkpoint=args.ckpt_dir)
         else:
             trainer.train()
-        dist_print("✅ 训练完成！")
+        dist_print("[train] Training complete!")
 
     except Exception as e:
-        dist_print(f"❌ 训练过程发生错误: {str(e)}")
+        dist_print(f"[error] Training failed: {str(e)}")
         if torch.distributed.is_initialized():
-            torch.distributed.barrier()  # 防止其他 rank 卡住
-        raise  # 不吞异常
+            torch.distributed.barrier()  # Prevent other ranks from hanging
+        raise  # Re-raise
 
 
     finally:
-        # 清理数据集
+        # Cleanup datasets
         dataset_dict = {
             'train_dataset': train_dataset,
             'val_dataset': val_dataset
@@ -394,14 +401,14 @@ def main():
         for name, ds in dataset_dict.items():
             if ds is not None and hasattr(ds, 'close'):
                 ds.close()
-                dist_print(f"🧹 资源已释放: {name}（{type(ds).__name__}）")
+                dist_print(f"[cleanup] Released resources: {name} ({type(ds).__name__})")
 
-        # 清理 wandb
+        # Cleanup W&B
         if run is not None and is_main_process():
             wandb.finish()
-            dist_print("🧹 wandb run 已结束")
+            dist_print("[wandb] Run finished")
 
-    dist_print("🎉 主流程执行完毕！")
+    dist_print("[done] Main process finished!")
 
 
 if __name__ == "__main__":

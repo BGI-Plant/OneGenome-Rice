@@ -2,6 +2,8 @@
 
 This repository trains and runs models that predict **strand-specific RNA-seq coverage** from a **DNA sequence window** and matching **ATAC-seq** (chromatin accessibility) in the same window. It targets plant and other genomics setups where BigWig tracks and a reference FASTA are available.
 
+For a biologically oriented narrative of the task, architecture, and evaluation, see [`senario.md`](senario.md).
+
 ## What it does
 
 - **Inputs:** reference genome (FASTA), ATAC BigWig, plus/minus strand RNA BigWigs, YAML experiment config.

@@ -1,4 +1,4 @@
-# Differential Locus Discovery from Bidirectional Genomic Attention
+# Trait-Associated Loci Finding
 
 ## 1. Overview
 

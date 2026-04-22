@@ -31,6 +31,10 @@ In the test set, the single-base level PCC between predicted and observed values
 
 ![Model Performance](resources/performance.png)
 
+## 5. Implementation Details
+
+For implementation details, see [`README.md`](README.md).
+
 ## References
 
 1. Zhu, T. et al. (2024). *Comprehensive mapping and modelling of the rice regulome landscape unveils the regulatory architecture underlying complex traits*. **Nature Communications**, 15, 6562. `https://www.nature.com/articles/s41467-024-50787-y`

@@ -84,7 +84,7 @@ def predict_and_save_result(model, test_dataset, output_dir, batch_size, num_wor
             return None
 
     with torch.no_grad():
-        for batch in tqdm(dataloader, desc=f"推理 rk{rank}", disable=not is_main_process()):
+        for batch in tqdm(dataloader, desc=f"Inference rk{rank}", disable=not is_main_process()):
             input_ids = batch["input_ids"].to(device)
             labels = batch["labels"].to(device)
 
@@ -231,7 +231,7 @@ def predict_and_save_result(model, test_dataset, output_dir, batch_size, num_wor
             out_fname = f"{Path(bs_name).stem}__{Path(mod_name).stem}_predictions.csv"
             out_path = os.path.join(output_dir, out_fname)
             df_sorted.to_csv(out_path, index=False)
-            dist_print(f"✅ 合并并保存: {out_path} ({len(df_sorted)} rows)")
+            dist_print(f"[save] Merged and saved: {out_path} ({len(df_sorted)} rows)")
 
         # cleanup tmp dirs
         for r in range(world_size):
@@ -247,53 +247,53 @@ def predict_and_save_result(model, test_dataset, output_dir, batch_size, num_wor
     if dist.is_initialized():
         dist.barrier()
 
-    dist_print("💾 预测完成")
+    dist_print("[done] Prediction finished")
 
 
 def main():
     parser = argparse.ArgumentParser(description="RNA-seq Coverage Prediction CLI")
 
-    # 模型相关
+    # Model
     parser.add_argument("--model_path", type=str, required=True,
-                        help="预训练模型路径，如：/mnt/zzbnew/peixunban/yecheng/model/hyenadna-small-32k-seqlen-hf")
+                        help="Pretrained model path, e.g. /path/to/hyenadna-small-32k-seqlen-hf (HF format).")
     parser.add_argument("--ckpt_path", type=str, required=True,
-                        help="下游任务模型检查点路径，支持 .bin 或 .safetensors")
+                        help="Downstream checkpoint path (.bin or .safetensors).")
     parser.add_argument("--use_flash_attn", action="store_true",
-                        help="是否启用 Flash Attention 2")
+                        help="Enable FlashAttention-2.")
     parser.add_argument("--tokenizer_path", type=str,
-                        help="tokenizer路径")
+                        help="Tokenizer path (HF format).")
     parser.add_argument("--proj_dim", type=int, default=1024,
-                        help="U-Net 的输入特征维度")
+                        help="U-Net input feature dimension.")
     parser.add_argument("--num_downsamples", type=int, default=4,
-                        help="U-Net 的下采样次数")
+                        help="Number of downsampling blocks in the U-Net.")
     parser.add_argument("--bottleneck_dim", type=int, default=1536,
-                        help="U-Net 的瓶颈层维度")
+                        help="U-Net bottleneck dimension.")
 
-    # 数据相关
+    # Data
     parser.add_argument("--sequence_split_test", type=str, required=True,
-                        help="测试集索引 CSV 文件路径")
+                        help="Test split index CSV path.")
     parser.add_argument("--index_stat_json", type=str, required=True,
-                        help="训练集统计元信息 JSON 路径")
+                        help="Index statistics JSON path (index_stat.json).")
     parser.add_argument("--bigWig_labels_meta", type=str, required=True,
-                        help="训练数据统计信息")
+                        help="BigWig labels metadata (CSV).")
     parser.add_argument("--test_chromosomes", type=str, nargs="+", default=["chr19"],
-                        help="要预测的染色体列表，如：--test_chromosomes chr19 chr20")
+                        help="Chromosomes to predict, e.g. --test_chromosomes chr19 chr20")
     parser.add_argument("--max_predict_samples", type=int, default=None,
-                        help="调试用：限制用于预测的样本数（None 表示不限制）")
+                        help="Debug: limit number of samples used for prediction (None means no limit).")
 
-    # 输出相关
+    # Output
     parser.add_argument("--output_base_dir", type=str, required=True,
-                        help="输出结果保存目录")
+                        help="Output directory for predictions.")
 
-    # 运行配置
+    # Runtime
     parser.add_argument("--max_seq_len", type=int, default=32768,
-                        help="序列最大长度，默认 32000")
+                        help="Maximum sequence length (default: 32768).")
     parser.add_argument("--batch_size", type=int, default=12,
-                        help="推理批大小，默认 12")
+                        help="Inference batch size (default: 12).")
     parser.add_argument("--num_workers", type=int, default=10,
-                        help="DataLoader 工作线程数，默认 10")
+                        help="Number of DataLoader workers (default: 10).")
     parser.add_argument("--seed", type=int, default=42,
-                        help="随机种子，默认 42")
+                        help="Random seed (default: 42).")
 
     args = parser.parse_args()
 
@@ -304,8 +304,8 @@ def main():
         logfile_name = setup_logging(args.output_base_dir, log_filename="predict")
         device = f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
 
-        dist_print(f"✅ 日志保存至 {logfile_name}")
-        dist_print("🚀 开始加载模型和分词器...")
+        dist_print(f"[log] Writing logs to {logfile_name}")
+        dist_print("[load] Loading model and tokenizer...")
 
         start_time = time.time()
 
@@ -326,7 +326,7 @@ def main():
 
         end_time = time.time()
         loading_time = end_time - start_time
-        dist_print(f"✅ 模型加载完成！耗时: {loading_time:.2f} 秒")
+        dist_print(f"[load] Model loaded in {loading_time:.2f} seconds")
 
         tokenizer = AutoTokenizer.from_pretrained(
             args.tokenizer_path,
@@ -334,45 +334,45 @@ def main():
             revision="main",
             padding_side='right'
         )
-        dist_print("✅ 分词器加载完毕")
+        dist_print("[load] Tokenizer loaded")
 
-        dist_print(f"🧬 要预测的染色体: {args.test_chromosomes}")
+        dist_print(f"[data] Chromosomes to predict: {args.test_chromosomes}")
 
-        dist_print("🏷️ 获取测试样本索引...")
+        dist_print("[data] Loading test index...")
         test_index_df = get_index(args.sequence_split_test)
         selected_test_index_df = test_index_df[test_index_df["chromosome"].str.extract(r'(Chr\d+)')[0].isin(args.test_chromosomes)].copy()
         if args.max_predict_samples is not None:
             selected_test_index_df = selected_test_index_df[:args.max_predict_samples]
         
-        #run_sequence_split_and_meta_extract.py中已经定义好染色体，这里不需要再筛选一次
+        # Chromosomes are already defined in run_sequence_split_and_meta_extract.py, so no need to filter again here.
         #selected_test_index_df = test_index_df
 
-        # 如果指定了 max_test_samples（沿用 train.py 名称），随机采样限制测试样本数
+        # If max_test_samples is set (legacy name from train.py), limit the number of test samples by random sampling.
         # if args.max_test_samples is not None:
         #     selected_test_index_df = selected_test_index_df.head(args.max_test_samples).reset_index(drop=True)
-        #     dist_print(f"🔬 使用前 {len(selected_test_index_df)} 条测试样本进行预测")
+        #     dist_print(f"[debug] Predicting on the first {len(selected_test_index_df)} test samples")
 
-        dist_print("🧩 创建测试数据集...")
+        dist_print("[data] Building test dataset...")
         test_dataset = MultiTrackDataset(selected_test_index_df, 
                                         # pd.read_csv(args.bigWig_labels_meta), 
                                         json.load(open(args.index_stat_json, "r")),
                                         tokenizer, max_length=args.max_seq_len,mode="single")
-        dist_print(f"✅ 测试集规模: {len(test_dataset):,} 样本")
+        dist_print(f"[data] Test set size: {len(test_dataset):,} samples")
 
-        dist_print("🧪 开始测试集预测...")
+        dist_print("[infer] Starting prediction on test set...")
         predict_and_save_result(model, test_dataset, args.output_base_dir, args.batch_size, args.num_workers)
-        dist_print("✅ 预测完成...")
+        dist_print("[infer] Prediction complete")
 
     except Exception as e:
-        dist_print(f"❌ 发生错误: {str(e)}")
+        dist_print(f"[error] Error: {str(e)}")
         raise
     finally:
         for ds_name in ['train_dataset', 'val_dataset', 'test_dataset']:
             if ds_name in locals() and hasattr(locals()[ds_name], 'close'):
                 locals()[ds_name].close()
-                dist_print(f"🧹 {ds_name} 资源已释放")
+                dist_print(f"[cleanup] Released resources: {ds_name}")
 
-    dist_print("🎉 主流程执行完毕！")
+    dist_print("[done] Main process finished")
 
 
 if __name__ == "__main__":

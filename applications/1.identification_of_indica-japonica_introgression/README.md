@@ -12,7 +12,7 @@ Data foundation: a collection of high-quality assembled rice genomes
 
 Subpopulation assignment: based on subpopulation labels from the RiceVarMap database
 
-Sample selection: samples overlapping with the 3KRGP (3K rice genome project) were selected, followed by further filtering using whole-genome variation–based principal component analysis (PCA). Finally, each 10 representative samples were selected from both *indica* and temperate *japonica* groups, aiming to preserve within-subpopulation genetic diversity while minimizing potential interference from introgression introduced during breeding history. And one additional representative sample from each of *indica* and *japonica* was selected to construct an independent test set for evaluation.
+Sample selection: samples overlapping with the 3KRGP (3K rice genome project) were selected, followed by further filtering using whole-genome variation–based principal component analysis (PCA). Finally, 10 representative samples were selected from both *indica* and temperate *japonica* groups, aiming to preserve within-subpopulation genetic diversity while minimizing potential interference from introgression introduced during breeding history. And one additional representative sample from each of *indica* and *japonica* was selected to construct an independent test set for evaluation.
 
 | Sample Name     | ID_3K          | Region      | Subpop                | Set          | DOI                        |
 | --------------- | -------------- | ----------- | --------------------- | ------------ | -------------------------- |
@@ -68,7 +68,7 @@ Model performance is evaluated on the test set using the true subpopulation labe
 Based on the subpopulation probabilities ($P_{\textit{indica}}$ and $P_{\textit{japonica}}$), genomic segments are classified as follows:
 
 - If either probability exceeds 0.8, the segment is assigned to the corresponding subpopulation.
-- If both probabilities are below 0.8, or both exceed 0.8, the segment is classified as a low-differentiation region, indicating weak or ambiguous subpopulation signals.
+- If neither probabilities exceeds 0.8, or both exceed 0.8, the segment is classified as a low-differentiation region, indicating weak or ambiguous subpopulation signals.
 
 This strategy enables effective identification of: 1) regions with pure origin; 2) potential introgressed segments; 3) conserved shared regions between *japonica* and *indica*
 
@@ -83,9 +83,9 @@ We tried to apply this framework to investigate *indica* introgression in the *j
 **Directory Tree:**
 
 ```
-Introgression_Analysis/
+1.identification_of_indica-japonica_introgression/
 ├── README.md                          # English documentation
-├── README_zh.md                       # Chinese documentation
+├── create_env.sh                      # Script to create environment
 ├── requirements.txt                   # Python dependencies
 ├── run_train_rf.sh                    # Script to run training pipeline
 ├── run_variety_inference.sh           # Script to run inference pipeline
@@ -149,13 +149,13 @@ Introgression_Analysis/
 │           └── result_metrics.json    # Overall metrics
 │
 └── images/                            # Documentation images
-    ├── Introgression_Analysis-a.png   # Framework diagram
-    └── Introgression_Analysis-b.png   # Case study illustration
+    ├── Introgression_Framework.png
+    └── Elite_Japonica_Cultivar_YF47_Introgression.png
 ```
 
 **Key directories:**
 
-- 📁 **data/**: Contains or will contain JSONL training/test splits
+- 📁 **data/**: Contains or will contain JSONL train/test splits
 - 📁 **fasta_data/**: Place your FASTA files here before running `genomic_window_egmentation.py`
 - 📁 **model/**: Download foundation model weights and place here
 - 📁 **results_path/**: Auto-generated directory with trained models and inference outputs
@@ -281,8 +281,10 @@ See **Section 5** for environment setup instructions. Quick summary:
 
 ### **6.2 Foundation model and data layout**
 
-1. **Foundation model**Point `model.path` / `models.llm_path` in the YAML files to a local Hugging Face–style directory (default in configs: `model/rice_1B_stage2_8k_hf`). Inference uses `local_files_only=True`, so weights must be present on disk.
-2. **Step 1 — Split genomes into windows (`utils/genomic_window_egmentation.py`)**Before `scripts/train_rf.py`, you must prepare the training and test JSONL files. The usual path is to slice FASTA genomes into fixed windows with this script.
+1. **Foundation model**
+Point `model.path` / `models.llm_path` in the YAML files to a local Hugging Face–style directory (default in configs: `model/rice_1B_stage2_8k_hf`). Inference uses `local_files_only=True`, so weights must be present on disk.
+2. **Split genomes into windows (`utils/genomic_window_egmentation.py`)**
+Before `scripts/train_rf.py`, you must prepare the training and test JSONL files. The usual path is to slice FASTA genomes into fixed windows with this script.
 
    Place FASTA files under `fasta_data/` (or edit `FASTA_GROUPS` / pass `--fasta-root`). Then run:
 
@@ -291,7 +293,8 @@ See **Section 5** for environment setup instructions. Quick summary:
    ```
 
    This writes `data/rice_introgression_jap-ind/train.jsonl` and `data/rice_introgression_jap-ind/test.jsonl` (8,000 bp windows; train step 4,000 bp, test step 8,000 bp per script defaults). Paths must match `dataset.data_path` and `dataset.eval_datasets` in `config/train_rf_config.yaml`.
-3. **Training JSONL format**Each line must be a JSON object with at least the keys configured in `data/datasets_info.yaml` (`sequence` and `label` for `rice_introgression_jap-ind`). Labels are multilabel vectors used by `RandomForestClassifier` (one RF per output dimension). If you already have compatible JSONL from another pipeline, you may place them under `data/<dataset_name>/` instead of running the window script.
+3. **Training JSONL format**
+Each line must be a JSON object with at least the keys configured in `data/datasets_info.yaml` (`sequence` and `label` for `rice_introgression_jap-ind`). Labels are multilabel vectors used by `RandomForestClassifier` (one RF per output dimension). If you already have compatible JSONL from another pipeline, you may place them under `data/<dataset_name>/` instead of running the window script.
 
    **JSONL Format Specification:**
 
@@ -382,10 +385,11 @@ bash run_variety_inference.sh
 **Per-genome TSV (`*_results.tsv`):**
 
 ```
-chrom	start	end	ground_truth	label	prob_japonica	prob_indica	group
-chr1	0	8000	[1,0]	japonica	0.92	0.08	japonica
-chr1	8000	16000	[1,0]	japonica	0.85	0.15	japonica
-chr1	16000	24000	[1,0]	introgressed	0.45	0.55	indica
+chrom	start	end	ground_truth	label	prob               group
+chr1	0	8000	1,0                1,0	0.629000,0.371000	Japonica
+chr1	8000	16000	1,0                1,0	0.968000,0.032000	Japonica
+chr1	16000	24000	1,0                1,0	0.989000,0.011000	Japonica
+chr1	24000	32000	1,0                1,0	0.998000,0.002000	Japonica
 ```
 
 **Column definitions:**
@@ -393,12 +397,11 @@ chr1	16000	24000	[1,0]	introgressed	0.45	0.55	indica
 | Column            | Type   | Description                                                |
 | ----------------- | ------ | ---------------------------------------------------------- |
 | `chrom`         | string | Chromosome/sequence identifier                             |
-| `start`         | int    | Window start position (0-based)                            |
-| `end`           | int    | Window end position (exclusive)                            |
+| `start`         | int    | Window start position                       |
+| `end`           | int    | Window end position                           |
 | `ground_truth`  | string | True label `[japonica_binary, indica_binary]`            |
-| `label`         | string | Predicted class:`japonica`, `indica`, or `ambiguous` |
-| `prob_japonica` | float  | Probability of*japonica* origin (0.0–1.0)               |
-| `prob_indica`   | float  | Probability of*indica* origin (0.0–1.0)                 |
+| `label`         | string | Predict label |
+| `prob` | float  | [$P_{\textit{indica}}$, $P_{\textit{japonica}}$] (0.0–1.0)               |
 | `group`         | string | Classification result                                      |
 
 ### **6.6 Optional: aggregate metrics from TSV files**

@@ -39,45 +39,34 @@ Logging: Real-time metrics via Weights & Biases and structured JSONL logs; per-t
 
 
 ### Key arguments passed to train.py:
-Argument
-Description
---model_path / --tokenizer_dir
-Path to pre-trained foundation model
---sequence_split_train_multi
-Comma-separated window index CSVs
---index_stat_multi_json
-Corresponding index_stat.json paths
---train_chromosomes / --val_chromosomes
-Chromosome lists for train/val splits
---output_base_dir
-Checkpoint & log output directory
---lr, --batch_size_per_device, --num_train_epochs
-Optimization hyperparameters
---use_flash_attn, --use_wandb
-Enable acceleration & experiment tracking
+| Argument | Description |
+|---|---|
+| `--model_path` / `--tokenizer_dir` | Path to pre-trained foundation model |
+| `--sequence_split_train_multi` | Comma-separated window index CSVs |
+| `--index_stat_multi_json` | Corresponding `index_stat.json` paths |
+| `--train_chromosomes` / `--val_chromosomes` | Chromosome lists for train/val splits |
+| `--output_base_dir` | Checkpoint & log output directory |
+| `--lr`, `--batch_size_per_device`, `--num_train_epochs` | Optimization hyperparameters |
+| `--use_flash_attn`, `--use_wandb` | Enable acceleration & experiment tracking |
 
 ### Inference & Visualization
 Inference is handled by predict.py, launched via run_predict.sh. It processes held-out chromosomes or accessions, outputs base-resolution prediction tracks, and supports batched sliding-window evaluation.
 
 ### Key inference arguments:
-Argument
-Description
---ckpt_path
-Path to fine-tuned .safetensors checkpoint
---sequence_split_test
-Test set window index CSV
---test_chromosomes
-Chromosomes to evaluate
---output_base_dir
-Prediction output directory
---batch_size, --num_workers
-Inference throughput settings
+| Argument | Description |
+|---|---|
+| `--ckpt_path` | Path to fine-tuned `.safetensors` checkpoint |
+| `--sequence_split_test` | Test set window index CSV |
+| `--test_chromosomes` | Chromosomes to evaluate |
+| `--output_base_dir` | Prediction output directory |
+| `--batch_size`, `--num_workers` | Inference throughput settings |
 
 ### Visualization
 Use src/viewer.py to plot predicted vs. observed tracks, compare reference vs. mutant sequences, or generate publication-ready genomic browser-style figures:
 
 
 ## File Structure
+```text
 ├── data_prepare.sh # End-to-end data preprocessing & window indexing
 ├── train.py # Core training script with DDP & custom Trainer
 ├── predict.py # Inference script for chromosome/window-level prediction
@@ -87,12 +76,13 @@ Use src/viewer.py to plot predicted vs. observed tracks, compare reference vs. m
 ├── README.md # This file
 ├── scripts/ # Data preprocessing & index generation utilities
 └── src/ # Core modules
-├── model.py # GenOmics architecture (DNA encoder + U-Net decoder)
-├── trainer.py # Custom Trainer (DDP sync, per-head loss, collation)
-├── dataset.py # Multi-track BigWig/FASTA dataset & collate functions
-├── metrics.py # Pearson/Spearman/R² evaluation utilities
-├── viewer.py # Prediction visualization & track comparison tools
-└── util.py # DDP setup, logging, distributed synchronization
+    ├── model.py # GenOmics architecture (DNA encoder + U-Net decoder)
+    ├── trainer.py # Custom Trainer (DDP sync, per-head loss, collation)
+    ├── dataset.py # Multi-track BigWig/FASTA dataset & collate functions
+    ├── metrics.py # Pearson/Spearman/R² evaluation utilities
+    ├── viewer.py # Prediction visualization & track comparison tools
+    └── util.py # DDP setup, logging, distributed synchronization
+```
 
 ## 3. Environment Setup
 We recommend using a clean Conda environment with CUDA 12.1+ and PyTorch 2.0+ to leverage `bfloat16` mixed precision and FlashAttention-2.
