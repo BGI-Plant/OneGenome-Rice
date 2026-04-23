@@ -206,26 +206,11 @@ A central challenge in predictive genomics is linking static DNA sequence to dyn
 
 **Ethical Considerations and Limitations**: Like other foundation models, OGR models may exhibit behaviors that carry potential risks. They may generate inaccurate outputs when interpreting rice genomic sequences or making inferences. Therefore, users should conduct rigorous validation and apply appropriate safeguards before using OGR in downstream research. Developers deploying applications based on OGR must carefully assess risks specific to their use cases.
 
-## 7. Citation and Acknowledgements(TODO!)
+## 7. Citation and Acknowledgements
 
-We acknowledge the Human Pangenome Reference Consortium (HRPC; BioProject ID: PRJNA730823) and its funding agency, the National Human Genome Research Institute (NHGRI), for providing publicly available data. We also thank the BGI AI team for technical assistance.
+The model training process was conducted on the 021 Large Science Model, Zero2X open platform, and Nanhu Computing Framework.
 
-If you use this work in your research, please cite the following paper:
 
-```
-@article{10.1093/gigascience/giaf132,
-    author = {Genos Team, Hangzhou, China},
-    title = {Genos: A Human-Centric Genomic Foundation Model},
-    journal = {GigaScience},
-    pages = {giaf132},
-    year = {2025},
-    month = {10},
-    issn = {2047-217X},
-    doi = {10.1093/gigascience/giaf132},
-    url = {https://doi.org/10.1093/gigascience/giaf132},
-    eprint = {https://academic.oup.com/gigascience/advance-article-pdf/doi/10.1093/gigascience/giaf132/64848789/giaf132.pdf},
-}
-```
 
 ## 8. Contact(TODO!)
 
