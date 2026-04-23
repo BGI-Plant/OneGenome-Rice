@@ -78,109 +78,78 @@ We tried to apply this framework to investigate *indica* introgression in the *j
 
 ![Case study illustration (e.g. YF47)](images/Elite_Japonica_Cultivar_YF47_Introgression.png)
 
-## **4. Project structure**
+## **4. Project Structure**
 
-**Directory Tree:**
+**Directory Tree**
 
 ```
 1.identification_of_indica-japonica_introgression/
-├── README.md                          # English documentation
-├── create_env.sh                      # Script to create environment
-├── requirements.txt                   # Python dependencies
-├── run_train_rf.sh                    # Script to run training pipeline
-├── run_variety_inference.sh           # Script to run inference pipeline
-│
-├── scripts/                           # Main execution scripts
-│   ├── train_rf.py                    # Train random forest on embeddings
-│   └── variety_inference.py           # Genome-scale inference and metrics
-│
-├── benchmarks/                        # Embedding extraction utilities
-│   ├── __init__.py
-│   └── embedding_extract.py           # JSONLDataset and embedding utils
-│
-├── utils/                             # Data processing utilities
-│   ├── __init__.py
-│   ├── genomic_window_egmentation.py  # Convert FASTA to windowed JSONL
-│   ├── compute_metrics.py             # Metrics computation helpers
-│   └── utils.py                       # General utility functions
-│
-├── config/                            # Configuration files
-│   ├── train_rf_config.yaml           # Training hyperparameters & paths
-│   └── variety_inference_config.yaml  # Inference parameters
-│  
-│
-├── data/                              # Input/output data directory
-│   ├── datasets_info.yaml             # Declared dataset formats
-│   └── rice_introgression_jap-ind/    # Dataset splits (after preprocessing)
-│       ├── train.jsonl                # Training JSONL (generated)
-│       └── test.jsonl                 # Testing JSONL (generated)
-│
-├── fasta_data/                        # Input FASTA files
-│   ├── japonica.train01.genome.fa     # Japonica training genome
-│   ├── ...               
-│   ├── japonica.train10.genome.fa
-│   │
-│   ├── indica.train01.genome.fa       # Indica training genome
-│   ├── ...               
-│   ├── indica.train10.genome.fa
-│   │
-│   ├── japonica.test01.genome.fa      # Japonica test genome
-│   └── indica.test01.genome.fa        # Indica test genome
-│
-├── model/                             # Foundation model weights
-│   └── rice_1B_stage2_8k_hf/          # OneGenome-Rice model directory
-│       ├── config.json
-│       ├── model.safetensors          # Model weights
-│       └── tokenizer.json
-│
-├── embedding_path/                    # Cached embeddings (generated)
-│   └── rice_1B_stage2_8k_hf/          # Embeddings per model
-│       ├── rice_introgression_jap-ind-12layer_train.pt
-│       └── rice_introgression_jap-ind-12layer_test.pt
-│
-├── results_path/                      # Training & inference results (generated)
-│   └── rice_1B_stage2_8k_hf/
-│       ├── last_epoch_model/          # Trained RF models
-│       │   ├── rice_introgression_jap-ind-12layer.rf.pkl
-│       │   └── training_results.tsv
-│       └── rice_introgression_jap_ind_ws8k_step8k/  # Inference outputs
-│           ├── japonica.test01.genome_results.tsv   # Per-window predictions
-│           ├── indica.test01.genome_results.tsv
-│           └── result_metrics.json    # Overall metrics
-│
-└── images/                            # Documentation images
-    ├── Introgression_Framework.png
-    └── Elite_Japonica_Cultivar_YF47_Introgression.png
+├── README.md
+├── requirements.txt
+├── create_env.sh
+├── cli/
+│   ├── main.py
+│   └── only_test.py
+├── config/
+│   ├── config.yaml
+│   └── only_test.yaml
+├── src/
+│   ├── common/
+│   │   ├── config.py
+│   │   └── schema.py
+│   ├── io/
+│   │   ├── paths.py
+│   │   └── naming.py
+│   ├── datasets/
+│   │   └── prepare.py
+│   ├── features/
+│   │   ├── embedding.py
+│   │   ├── embedding_backend_builtin.py
+│   │   └── sequence_embedding.py
+│   ├── models/
+│   │   └── loader.py
+│   ├── classifiers/
+│   │   └── rf.py
+│   ├── evaluation/
+│   │   ├── metrics.py
+│   │   └── report.py
+│   └── pipelines/
+│       ├── prepare.py
+│       ├── extract.py
+│       ├── train.py
+│       ├── test.py
+│       ├── only_test.py
+│       └── run.py
+├── data/
+├── fasta_data/
+├── model/
+├── embedding_path/
+├── results_path/
+└── images/
 ```
 
-**Key directories:**
+**Key design points**
 
-- 📁 **data/**: Contains or will contain JSONL train/test splits
-- 📁 **fasta_data/**: Place your FASTA files here before running `genomic_window_egmentation.py`
-- 📁 **model/**: Download foundation model weights and place here
-- 📁 **results_path/**: Auto-generated directory with trained models and inference outputs
-- 📁 **embedding_path/**: Auto-generated directory with cached embeddings
-
-**Detailed file roles:**
-
-| Path                                     | Role                                                                                                                                                                                                                                                                                                                                                                       |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/train_rf.py`                  | Loads the foundation model, extracts layer embeddings for `train` / `test` JSONL splits, trains multilabel random forests per layer, evaluates on the held-out split, writes `training_results.tsv` and `*.rf.pkl` checkpoints. **Requires** windowed JSONL under `data/<dataset>/` (typically produced first by `utils/genomic_window_egmentation.py`). |
-| `scripts/variety_inference.py`         | Sliding windows over input FASTA, embedding extraction, RF prediction, per-window TSV plus aggregate `result_metrics.json`.                                                                                                                                                                                                                                              |
-| `benchmarks/embedding_extract.py`      | `JSONLDataset` and embedding extraction utilities used by training.                                                                                                                                                                                                                                                                                                      |
-| `utils/genomic_window_egmentation.py`  | CLI to build `train.jsonl` / `test.jsonl` from grouped FASTA paths.                                                                                                                                                                                                                                                                                                    |
-| `utils/compute_metrics.py`             | Shared metrics helpers; can aggregate existing TSVs from the command line.                                                                                                                                                                                                                                                                                                 |
-| `config/train_rf_config.yaml`          | Training: model path, dataset list, embedding and results directories, RF hyperparameters, layers to evaluate.                                                                                                                                                                                                                                                             |
-| `config/variety_inference_config.yaml` | Inference: FASTA list, labels for evaluation, paths to LLM and trained RF, window/step sizes, output dirs, probability threshold.                                                                                                                                                                                                                                          |
-| `data/datasets_info.yaml`              | Declares supported dataset names and per-dataset keys (`seq_key`, `label_key`, splits).                                                                                                                                                                                                                                                                                |
+- Unified pipeline config: `config/config.yaml`
+- External-only evaluation config: `config/only_test.yaml`
+- Entrypoints: `python -m cli.main` and `python -m cli.only_test`
+- Supported stages: `prepare`, `extract`, `train`, `test`, `all`
+- Output layout:
+  - dataset splits: `data/<dataset_tag>/train.jsonl`, `data/<dataset_tag>/test.jsonl`
+  - embeddings: `embedding_path/<model.name>/...` or `embedding_path/<model.name>/runs/<run.name>/...`
+  - results: `results_path/<model.name>/runs/<run.name>/...`
+- Resume-friendly behavior:
+  - `prepare`: skip existing split files
+  - `extract`: extract only missing embedding layers
+  - `train`: skip existing RF model files and reuse existing metrics
+  - `test`: skip existing result TSV files for completed layers
+- Experiment isolation via `run.name` and `run.isolate_embeddings`
 
 ## **5. Quick Start**
 
-### **Quick Environment Setup**
+### **5.1 Environment Setup**
 
-Run commands below from the **repository root**. Python 3.11 + conda is recommended.
-
-#### **Option 1 (Recommended): Install from `requirements.txt`**
+Run from project root:
 
 ```bash
 conda create -n env_introgression_analysis python=3.11 -y
@@ -189,225 +158,113 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Best for: online environments where you want dependency versions consistent with the repository.
-
-#### **Option 2: Use the setup script**
+Or use:
 
 ```bash
 bash create_env.sh
 ```
 
-The script will:
+### **5.2 Minimal End-to-End Example**
 
-- create and activate `env_introgression_analysis`;
-- install CUDA 12.8 PyTorch (`torch/torchvision/torchaudio`);
-- install the remaining Python dependencies.
+1) Place FASTA files under the path configured by `data_process.fasta_root` in `config/config.yaml`.
+   - Relative paths are resolved from the repository root.
+   - Absolute paths are accepted directly.
 
-Best for: quick reproducible setup with fewer manual commands.
+2) Set the experiment name and embedding isolation option in `config/config.yaml`:
 
-#### **Option 3: Offline PyTorch install (slow/no network servers)**
+```yaml
+run:
+  name: "exp_001"
+  isolate_embeddings: false
+```
 
-Best for: servers with slow or restricted internet, where **PyTorch installation is the main bottleneck**.Recommended approach: install only the PyTorch trio offline; install remaining packages via regular `pip`.
-
-1) On a machine with internet, download PyTorch wheels:
-
-- from the official CUDA 12.8 index:
-  - `torch-2.10.0+cu128-cp311-cp311-<platform>.whl`
-  - `torchvision-0.25.0+cu128-cp311-cp311-<platform>.whl`
-  - `torchaudio-2.10.0+cu128-cp311-cp311-<platform>.whl`
-
-2) On the target server, install PyTorch first (example):
+3) Run the full pipeline:
 
 ```bash
-pip install torch-2.10.0+cu128-cp311-cp311-manylinux_2_28_x86_64.whl \
-            torchvision-0.25.0+cu128-cp311-cp311-manylinux_2_28_x86_64.whl \
-            torchaudio-2.10.0+cu128-cp311-cp311-manylinux_2_28_x86_64.whl
+python -m cli.main --config config/config.yaml --stage all --datasets rice_introgression
 ```
 
-3) Install remaining dependencies online on the target server:
+4) Inspect outputs:
 
 ```bash
-pip install -r requirements.txt
+ls results_path/rice_1B_stage2_8k_hf/runs/exp_001/
 ```
 
-### **Minimal Example (5 Steps)**
-
-```bash
-# 1. Prepare FASTA files
-#    Training: fasta_data/japonica.train01-10.genome.fa (japonica), fasta_data/indica.train01-10.genome.fa (indica)
-#    Testing:  fasta_data/japonica.test01.genome.fa (japonica), fasta_data/indica.test01.genome.fa (indica)
-
-# 2. Generate windowed training/test datasets
-python utils/genomic_window_egmentation.py --dataset-name rice_introgression --output-dir data
-
-# 3. Train the random forest model
-python scripts/train_rf.py --config config/train_rf_config.yaml
-
-# 4. Run genome-scale inference
-python scripts/variety_inference.py --config config/variety_inference_config.yaml
-
-# 5. Check results
-ls results_path/rice_1B_stage2_8k_hf/rice_introgression_jap_ind_ws8k_step8k/
-cat results_path/rice_1B_stage2_8k_hf/rice_introgression_jap_ind_ws8k_step8k/result_metrics.json
-```
-
-**Expected output structure:**
-
-```
-results_path/
-├── rice_1B_stage2_8k_hf/
-│   ├── last_epoch_model/              # Trained RF models
-│   │   ├── rice_introgression_jap-ind-12layer.rf.pkl
-│   │   └── training_results.tsv
-│   └── rice_introgression_jap_ind_ws8k_step8k/
-│       ├── japonica.test01.genome_results.tsv      # Per-window predictions
-│       ├── indica.test01.genome_results.tsv
-│       └── result_metrics.json         # Overall metrics (ACC, AUC)
-```
+If `run.name: auto`, a timestamp-based run name will be generated automatically.
 
 ## **6. Usage**
 
-Run all commands from the **repository root** so relative paths in the YAML files resolve correctly.
-
-**Order of operations:** run `utils/genomic_window_egmentation.py` first to build `train.jsonl` and `test.jsonl`, then run `scripts/train_rf.py`. Training reads only prepared JSONL on disk; it does not split raw FASTA for you.
-
-### **6.1 Environment**
-
-See **Section 5** for environment setup instructions. Quick summary:
-
-- **Recommended**: Option 1, `pip install -r requirements.txt` (most stable and consistent)
-- **Automated**: Option 2, run `bash create_env.sh` (quick reproducible setup)
-- **Offline**: Option 3, pre-download `.whl` for PyTorch and install remaining deps with `pip`
-
-### **6.2 Foundation model and data layout**
-
-1. **Foundation model**
-Point `model.path` / `models.llm_path` in the YAML files to a local Hugging Face–style directory (default in configs: `model/rice_1B_stage2_8k_hf`). Inference uses `local_files_only=True`, so weights must be present on disk.
-2. **Split genomes into windows (`utils/genomic_window_egmentation.py`)**
-Before `scripts/train_rf.py`, you must prepare the training and test JSONL files. The usual path is to slice FASTA genomes into fixed windows with this script.
-
-   Place FASTA files under `fasta_data/` (or edit `FASTA_GROUPS` / pass `--fasta-root`). Then run:
-
-   ```bash
-   python utils/genomic_window_egmentation.py --dataset-name rice_introgression --output-dir data
-   ```
-
-   This writes `data/rice_introgression_jap-ind/train.jsonl` and `data/rice_introgression_jap-ind/test.jsonl` (8,000 bp windows; train step 4,000 bp, test step 8,000 bp per script defaults). Paths must match `dataset.data_path` and `dataset.eval_datasets` in `config/train_rf_config.yaml`.
-3. **Training JSONL format**
-Each line must be a JSON object with at least the keys configured in `data/datasets_info.yaml` (`sequence` and `label` for `rice_introgression_jap-ind`). Labels are multilabel vectors used by `RandomForestClassifier` (one RF per output dimension). If you already have compatible JSONL from another pipeline, you may place them under `data/<dataset_name>/` instead of running the window script.
-
-   **JSONL Format Specification:**
-
-   **File location:** `data/rice_introgression_jap-ind/train.jsonl` or `test.jsonl`
-
-   **Each line is a JSON object with this structure:**
-
-   ```json
-   {
-     "sequence": "ATCGATCGATCG...",
-     "label": [1, 0]
-   }
-   ```
-
-   **Field details:**
-
-   | Field        | Type            | Description                                            | Example                                                |
-   | ------------ | --------------- | ------------------------------------------------------ | ------------------------------------------------------ |
-   | `sequence` | string          | DNA sequence (case-insensitive, A/T/G/C/N only)        | `"ATCGATCG"`                                         |
-   | `label`    | array of 2 ints | Multilabel vector:`[japonica_binary, indica_binary]` | `[1, 0]` (pure *japonica*) or `[0, 1]` (pure *indica*) |
-
-   **Example JSONL file:**
-
-
-   ```
-   {"sequence": "ATCGATCGATCGATCGATCGATCGATCG", "label": [1, 0]}
-   {"sequence": "TCGATCGATCGATCGATCGATCGATCGA", "label": [1, 0]}
-   {"sequence": "CGATCGATCGATCGATCGATCGATCGAT", "label": [0, 1]}
-   {"sequence": "CGATTACATGGTAGCTAGCTAAGCATTA", "label": [0, 1]}
-   ```
-
-   **Automatic generation via `genomic_window_egmentation.py`:**
-   The script automatically converts FASTA files into this format:
-
-   - Reads multi-sequence FASTA
-   - Trims leading/trailing N bases
-   - Creates fixed-length sliding windows (default: 8,000 bp for training, same for test)
-   - Assigns labels based on the source file (*japonica* vs. *indica*)
-   - Outputs JSONL with one JSON object per window
-4. **Edit output paths in YAML**
-   In `config/train_rf_config.yaml`, set `embedding.output_dir` and `output.result_dir` (defaults `embedding_path`, `results_path`). The trained RF path used later is under `results_path/<model.name>/last_epoch_model/`.
-
-### **6.3 Train the random forest (`scripts/train_rf.py`)**
-
-Run this **after** `train.jsonl` / `test.jsonl` are generated.
+### **6.1 Unified Commands**
 
 ```bash
-python scripts/train_rf.py --config config/train_rf_config.yaml
+# Full pipeline
+python -m cli.main --config config/config.yaml --stage all
+
+# Stage by stage
+python -m cli.main --config config/config.yaml --stage prepare
+python -m cli.main --config config/config.yaml --stage extract
+python -m cli.main --config config/config.yaml --stage train
+python -m cli.main --config config/config.yaml --stage test
+
+# Run one or more dataset configurations from config
+python -m cli.main --config config/config.yaml --stage all --datasets rice_introgression rice_introgression_1
+
+# External RF x embedding only-test
+python -m cli.only_test --config config/only_test.yaml
 ```
 
-Pipeline behavior:
+### **6.2 Resume / Continue After Interruption**
 
-- If `embedding_path/<model.name>/<dataset>-<L>layer_train.pt` (and `_test.pt`) are missing for each layer `L` in `evaluation.layers`, embeddings are computed from JSONL and saved as `.pt` tensors.
-- If those files already exist, embedding extraction is skipped for that split.
-- Random forests are saved as `.../last_epoch_model/<dataset>-<L>layer.rf.pkl` (a `joblib` list of one `RandomForestClassifier` per label dimension).
-- Metrics are appended to `results_path/<model.name>/training_results.tsv`.
+Re-running the same stage with the same `run.name` will continue safely:
 
-You can also run:
+- `prepare`: skip existing `train.jsonl` / `test.jsonl`
+- `extract`: extract only missing embedding layers
+- `train`:
+  - skip existing RF model files
+  - reuse existing rows in `training_results.tsv`
+  - train/evaluate only unfinished layers
+- `test`: skip existing result TSV files for completed layers
 
-```bash
-bash run_train_rf.sh
+### **6.3 Run Isolation**
+
+Configure in `config/config.yaml`:
+
+```yaml
+run:
+  name: "exp_001"      # or "auto"
+  isolate_embeddings: false
 ```
 
-### **6.4 Genome-scale inference (`scripts/variety_inference.py`)**
+Path behavior:
 
-1. Set `models.rf_model_path` in `config/variety_inference_config.yaml` to the trained checkpoint path (must match `*-<layer>layer.rf.pkl`, e.g. `rice_introgression_jap-ind-12layer.rf.pkl` for layer 12).
-2. Set `input.fasta_files.path` to one or more FASTA files and `input.fasta_files.label` to the same-length list of ground-truth multilabel vectors for metric computation (`[1, 0]` → *Japonica*, `[0, 1]` → *Indica* per `VARIETY_LABEL_MAPPING` in the script).
-3. Adjust `data_processing.window_size` / `step_size` (defaults 8000 bp) and `prediction.threshold` for binarizing probabilities in `eval_from_tsv`.
+- Results (always isolated):
+  - `results_path/<model.name>/runs/<run.name>/...`
+- Embeddings:
+  - shared cache when `false`: `embedding_path/<model.name>/...`
+  - isolated when `true`: `embedding_path/<model.name>/runs/<run.name>/...`
 
-```bash
-python scripts/variety_inference.py --config config/variety_inference_config.yaml
+### **6.4 only_test (Matrix Evaluation)**
+
+`cli.only_test` is an independent evaluation entrypoint for external RF models and embedding files.
+
+- It does not alter the normal `stage=all` workflow.
+- It reads `test.classifier_paths` and `test.embedding_paths` from `config/only_test.yaml`.
+- `pairing: cross` evaluates the Cartesian product of classifiers and embeddings.
+- `pairing: zip` evaluates one-to-one pairs (requires equal list lengths).
+- `thresholds` can contain one or multiple values.
+- Outputs:
+  - one prediction TSV per `(classifier, embedding, threshold)` combination
+  - one `summary.tsv` with aggregated metrics
+
+Example config:
+
+```yaml
+test:
+  classifier_paths:
+    - "results_path/.../a_layer12.rf.pkl"
+  embedding_paths:
+    - "embedding_path/..._layer12_test.pt"
+  output_dir: "results_path/only_test"
+  pairing: "cross"
+  thresholds: [0.5]
 ```
-
-Outputs:
-
-- Per-genome TSV under `results_path/<llm_name>/<dataset_name>_ws…k_step…k/<genome>_results.tsv` (columns include `chrom`, `start`, `end`, `ground_truth`, `label`, `prob`, `group`).
-- Cached embeddings as NumPy arrays under `embedding_path/<llm_name>/`.
-- `result_metrics.json` in the same run output directory (overall and optional filtered subset).
-
-Shell helper:
-
-```bash
-bash run_variety_inference.sh
-```
-
-### **6.5 Output Data Formats**
-
-**Per-genome TSV (`*_results.tsv`):**
-
-```
-chrom	start	end	ground_truth	label	prob               group
-chr1	0	8000	1,0                1,0	0.629000,0.371000	Japonica
-chr1	8000	16000	1,0                1,0	0.968000,0.032000	Japonica
-chr1	16000	24000	1,0                1,0	0.989000,0.011000	Japonica
-chr1	24000	32000	1,0                1,0	0.998000,0.002000	Japonica
-```
-
-**Column definitions:**
-
-| Column            | Type   | Description                                                |
-| ----------------- | ------ | ---------------------------------------------------------- |
-| `chrom`         | string | Chromosome/sequence identifier                             |
-| `start`         | int    | Window start position                       |
-| `end`           | int    | Window end position                           |
-| `ground_truth`  | string | True label `[japonica_binary, indica_binary]`            |
-| `label`         | string | Predict label |
-| `prob` | float  | [$P_{\textit{indica}}$, $P_{\textit{japonica}}$] (0.0–1.0)               |
-| `group`         | string | Classification result                                      |
-
-### **6.6 Optional: aggregate metrics from TSV files**
-
-```bash
-python utils/compute_metrics.py path/to/results.tsv -t 0.5 -o metrics.json
-```
-
-Accepts multiple `.tsv` paths or directories (recursive); concatenates rows then runs the same logic as inference-time evaluation.
